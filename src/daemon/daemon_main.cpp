@@ -98,20 +98,55 @@ int main_impl(int argc, char* argv[], mp::Signal& app_ready_signal)
                                                        // relevant settings handlers
 
     mp::Daemon daemon(std::move(config));
-    QObject::connect(&app,
-                     &QCoreApplication::aboutToQuit,
-                     &daemon,
-                     &mp::Daemon::shutdown_grpc_server,
-                     Qt::DirectConnection);
 
+    QObject::connect(&app,
+        &QCoreApplication::aboutToQuit,
+        &daemon,
+        &mp::Daemon::shutdown_grpc_server,
+        Qt::DirectConnection);
+        
     mpl::log(mpl::Level::info, "daemon", fmt::format("Starting Multipass {}", mp::version_string));
-    mpl::log(mpl::Level::info,
-             "daemon",
-             fmt::format("Daemon arguments: {}", app.arguments().join(" ")));
+    mpl::log(mpl::Level::info, "daemon", fmt::format("Daemon arguments: {}", app.arguments().join(" ")));
+    
+    
+
+    // mpl::log(mpl::Level::info, "daemon", "before singleshot definition");
+    // QTimer::singleShot(10000, [&](){
+    //     mpl::log(mpl::Level::info, "daemon", "app is ready to process signals (in singleShot)");
+    //     app_ready_signal.signal();
+    // });
+    // mpl::log(mpl::Level::info, "daemon", "after singleshot definition");
 
     // Signal the signal handler that app has completed its basic initialization, and
     // ready to process signals.
     app_ready_signal.signal();
+
+//     QTimer* timer = new QTimer();
+//     timer->setInterval(1000);  // Retry every 1000ms = 1 second
+
+//     QObject::connect(timer, &QTimer::timeout, [server_address, &cert_provider, &app_ready_signal, timer]() {
+//         static int attempts = 0;
+//         ++attempts;
+
+//         if (quick_grpc_ping(server_address, *cert_provider)) {
+//             mpl::log(mpl::Level::info, "daemon", "gRPC ping succeeded");
+//             app_ready_signal.signal();
+//             timer->stop();
+//             timer->deleteLater();
+//         } else {
+//             mpl::log(mpl::Level::debug, "daemon", fmt::format("Attempt {}: gRPC still unresponsive...", attempts));
+//             if (attempts >= 10) {
+//                 mpl::log(mpl::Level::error, "daemon", "gRPC did not respond after 10 attempts");
+//                 app_ready_signal.signal();  // Fail open for now
+//                 timer->stop();
+//                 timer->deleteLater();
+//             }
+//         }
+//     });
+
+// timer->start();  // Starts the repeating 1s timer
+
+    
     auto exit_code = QCoreApplication::exec();
     // QConcurrent::run() invocations are dispatched through the global
     // thread pool. Wait until all threads in the pool are properly cleaned up.
